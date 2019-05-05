@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+   <head>
+      <meta charset="utf-8">
+      <title>Minesweeper</title>
+   </head>
+   <style>
+      canvas {
+         background-color: gray;
+      }
+   </style>
+   <body>
+      <h1>Minesweeper using Canvas</h1>
+      <h2>Options</h2>
+      <h3>Grid Size</h3>
+      <form>
+         <label for="x"></label>
+         <input id="x" type="number" value="9">
+         x
+         <label for="y"></label>
+         <input id="y" type="number" value="9">
+         <label for="numMines">Number of Mines</label>
+         <input id="numMines" type="number" name="" value="10">
+         <input type="button" name="" value="Submit" onclick="startGame()">
+      </form>
+      <canvas id="myCanvas" width="500" height="500"></canvas>
+      <script>
+         var grid;
+
+         var c = document.getElementById('myCanvas');
+         var ctx = c.getContext('2d');
+
+         function startGame() {
+            var x = getX();
+            var y = getY();
+            var numMines = getNumMines();
+            createCanvasGrid(ctx, 0, 0, x, y);
+         }
+         function getX() {
+            return document.getElementById('x').value;
+         }
+         function getY() {
+            return document.getElementById('y').value;
+         }
+         function getNumMines() {
+            return document.getElementById('numMines').value;
+         }
+         function createCanvasGrid(ctx, x, y, num_squares_x, num_squares_y, square_width, square_height, gutter_width, gutter_height, color) {
+            square_width = square_width || 25;
+            square_height = square_height || 25;
+            gutter_width = gutter_width || 2;
+            gutter_height = gutter_height || 2;
+            color = color || 'green';
+            for(var i = x + gutter_width; i < num_squares_x * (square_width + gutter_width); i = i + square_width + gutter_width) {
+               for(var j = y + gutter_height; j < num_squares_y * (square_height + gutter_height); j = j + square_height + gutter_height) {
+                  component(square_width, square_height, color, i, j, ctx);
+               }
+            }
+         }
+
+         function component(width, height, color, x, y, ctx) {
+           this.width = width;
+           this.height = height;
+           this.x = x;
+           this.y = y;
+           ctx.fillStyle = color;
+           ctx.fillRect(this.x, this.y, this.width, this.height);
+         }
+      </script>
+   </body>
+</html>
