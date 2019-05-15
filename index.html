@@ -5,8 +5,24 @@
       <title>Minesweeper</title>
    </head>
    <style>
-      canvas {
+      body {
+         font-family: Tahoma, sans-serif;
+      }
+      input[type=number] {
+         width: 40px;
+      }
+      .square {
          background-color: gray;
+         display: inline-block;
+         float: left;
+         height: 20px;
+         margin: 2px;
+         width: 20px;
+      }
+      .grid-wrapper {
+         border: 1px solid lightgreen;
+         display: inline-block;
+         padding: 15px;
       }
    </style>
    <body>
@@ -23,49 +39,120 @@
          <input id="numMines" type="number" name="" value="10">
          <input type="button" name="" value="Submit" onclick="startGame()">
       </form>
-      <canvas id="myCanvas" width="500" height="500"></canvas>
+      <div class="grid-wrapper">
+         <div id="grid"></div>
+      </div>
       <script>
-         var grid;
-
-         var c = document.getElementById('myCanvas');
-         var ctx = c.getContext('2d');
+         var grid = document.getElementById('grid');
+         var gridArray;
 
          function startGame() {
             var x = getX();
             var y = getY();
             var numMines = getNumMines();
-            createCanvasGrid(ctx, 0, 0, x, y);
+            clearGrid(grid);
+            createGrid(grid, x, y, numMines);
+            gridArray = createArray(gridArray, x, y, numMines);
+            console.log(gridArray);
+            gridArray = fillArray(gridArray);
          }
          function getX() {
-            return document.getElementById('x').value;
+            return Number(document.getElementById('x').value);
          }
          function getY() {
-            return document.getElementById('y').value;
+            return Number(document.getElementById('y').value);
          }
          function getNumMines() {
-            return document.getElementById('numMines').value;
+            return Number(document.getElementById('numMines').value);
          }
-         function createCanvasGrid(ctx, x, y, num_squares_x, num_squares_y, square_width, square_height, gutter_width, gutter_height, color) {
-            square_width = square_width || 25;
-            square_height = square_height || 25;
-            gutter_width = gutter_width || 2;
-            gutter_height = gutter_height || 2;
-            color = color || 'green';
-            for(var i = x + gutter_width; i < num_squares_x * (square_width + gutter_width); i = i + square_width + gutter_width) {
-               for(var j = y + gutter_height; j < num_squares_y * (square_height + gutter_height); j = j + square_height + gutter_height) {
-                  component(square_width, square_height, color, i, j, ctx);
+         function getGridElement() {
+            return document.getElementById('grid');
+         }
+
+         function createGrid(grid, num_squares_x, num_squares_y, numMines) {
+
+            //UI grid
+            var width = 24 * num_squares_x;
+            var height = 24 * num_squares_y;
+            grid.style.width = width + "px";
+            grid.style.height = height + "px";
+            for(var i = 0; i < num_squares_y; i++) {
+               for(var j = 0; j < num_squares_x; j++) {
+                  var id = j.toString() + '-' + i.toString();
+                  var square = createSquare(id);
+                  grid.appendChild(square);
                }
             }
          }
-
-         function component(width, height, color, x, y, ctx) {
-           this.width = width;
-           this.height = height;
-           this.x = x;
-           this.y = y;
-           ctx.fillStyle = color;
-           ctx.fillRect(this.x, this.y, this.width, this.height);
+         function createSquare(id) {
+            var square = document.createElement('div');
+            square.className += ' square';
+            square.id = id;
+            return square;
          }
+         function clearGrid(grid) {
+            while (grid.firstChild) {
+                grid.removeChild(grid.firstChild);
+            }
+         }
+         function createArray(array, num_squares_x, num_squares_y, numMines) {
+            //array grid
+            array = populateMines(array, num_squares_x, num_squares_y, numMines);
+            return array;
+         }
+         function populateMines(array, num_squares_x, num_squares_y, numMines) {
+            array = Array(num_squares_y).fill(0).map(x => Array(num_squares_x).fill(0));
+            for(var n = 0; n < numMines; ++n) {
+               var x_random = Math.floor(Math.random() * num_squares_x);
+               var y_random = Math.floor(Math.random() * num_squares_y);
+               if (array[y_random][x_random] != "x") {
+                  array[y_random][x_random] = "x";
+               }
+               else {
+                  n = n - 1;
+               }
+            }
+            return array;
+         }
+         function fillArray(array) {
+            for (var y = 0; y < array.length; ++y) {
+               for(var x = 0; x < array[0].length; ++x) {
+                  array[y][x] = getNumMinesNearby(array, x, y);
+                  console.log(x, y, array[y][x]);
+               }
+            }
+            return array;
+         }
+         function getNumMinesNearby(array, x, y) {
+            if (array[y][x] === "x") {
+               return "x";
+            }
+            //array[y][x]
+            var array_max_y = array.length;
+            var array_max_x = 0;
+            if (array_max_y > 0) {
+               array_max_x = array[0].length;
+            }
+            var numMinesNearby = 0;
+            //array = [0, 0, 0, 0],
+            //        [x, 0, 0, 0],
+            //        [0, 0 ,0, 0]
+            for(var i = -1; i < 2; ++i) {
+               for(var j = -1; j < 2; ++j) {
+                  //[-1][-1]
+                  //
+                  if(x + j >= 0 && x + j < array_max_x) {
+                     if(y + i >= 0 && y + i < array_max_y) {
+                        if (array[y + i][x + j] === "x") {
+                           numMinesNearby++;
+                        }
+                     }
+                  }
+               }
+            }
+            return numMinesNearby;
+         }
+
       </script>
    </body>
 </html>
