@@ -17,16 +17,21 @@
          float: left;
          height: 20px;
          margin: 2px;
+         text-align: center;
          width: 20px;
       }
+      .covered {
+      }
+      .uncovered {
+         background-color: white;
+      }
       .grid-wrapper {
-         border: 1px solid lightgreen;
          display: inline-block;
          padding: 15px;
       }
    </style>
    <body>
-      <h1>Minesweeper using Canvas</h1>
+      <h1>Minesweeper</h1>
       <h2>Options</h2>
       <h3>Grid Size</h3>
       <form>
@@ -38,6 +43,7 @@
          <label for="numMines">Number of Mines</label>
          <input id="numMines" type="number" name="" value="10">
          <input type="button" name="" value="Submit" onclick="startGame()">
+         <input type="button" name="" value="Clear" onclick="clearGrid(grid)">
       </form>
       <div class="grid-wrapper">
          <div id="grid"></div>
@@ -47,15 +53,30 @@
          var gridArray;
 
          function startGame() {
+            //get user input
             var x = getX();
             var y = getY();
             var numMines = getNumMines();
+
+            //clear the grid
             clearGrid(grid);
-            createGrid(grid, x, y, numMines);
+
+            //create and fill Array
             gridArray = createArray(gridArray, x, y, numMines);
-            console.log(gridArray);
             gridArray = fillArray(gridArray);
+            console.log(gridArray);
+            //create UI grid
+            createGrid(grid, gridArray, x, y, numMines);
+            //add listeners
+            var squares = document.getElementsByClassName('square');
+            for (var i = 0; i < squares.length; i++) {
+               squares[i].addEventListener('click', function () {
+                  revealSquare(this.id, gridArray)
+               });
+
+            }
          }
+
          function getX() {
             return Number(document.getElementById('x').value);
          }
@@ -69,7 +90,7 @@
             return document.getElementById('grid');
          }
 
-         function createGrid(grid, num_squares_x, num_squares_y, numMines) {
+         function createGrid(grid, array, num_squares_x, num_squares_y, numMines) {
 
             //UI grid
             var width = 24 * num_squares_x;
@@ -78,7 +99,7 @@
             grid.style.height = height + "px";
             for(var i = 0; i < num_squares_y; i++) {
                for(var j = 0; j < num_squares_x; j++) {
-                  var id = j.toString() + '-' + i.toString();
+                  var id = getId(j, i);//j.toString() + '-' + i.toString();
                   var square = createSquare(id);
                   grid.appendChild(square);
                }
@@ -90,10 +111,81 @@
             square.id = id;
             return square;
          }
+         function getNum(id, array) {
+            var xy = getXY(id);
+            //TODO: catch indexerror
+            return array[xy.y][xy.x];
+         }
+         function insertNum(id, num) {
+            var square = document.getElementById(id);
+            square.innerText = num;
+         }
+         function getXY(id) {
+            var split = id.split('-');
+            return {'x': split[0], 'y': split[1]};
+         }
+         function getId(x, y) {
+            return x.toString() + '-' + y.toString();
+         }
+         //TODO: check if this is true
+         //if the id square is 0, surroundings can be revealed
+         function areSurroundingSquaresRevealable(id, array) {
+            var xy = getXY(id);
+            return array[xy.y][xy.x] == 0;
+         }
+         function isMine(id, array) {
+            var xy = getXY(id);
+            return array[xy.y][xy.x] === 'x';
+         }
+         //TODO: actually make this work
+         function revealSurrounding(id, array) {
+            var xy = getXY(id);
+            //stop if is mine because game over
+            if (isMine(id, array)) {
+               revealSquare(id, array);
+               return;
+            }
+            //stop if no surrounding squares revealable
+            if (!areSurroundingSquaresRevealable(id, array)) {
+               revealSquare(id, array);
+               return;
+            }
+            //array[y][x]
+            var array_max_y = array.length;
+            var array_max_x = 0;
+            if (array_max_y > 0) {
+               array_max_x = array[0].length;
+            }
+            for(var i = -1; i < 2; ++i) {
+               for(var j = -1; j < 2; ++j) {
+                  if(xy.x + j >= 0 && xy.x + j < array_max_x) {
+                     if(xy.y + i >= 0 && xy.y + i < array_max_y) {
+                        revealSurrounding(getId(xy.x + j, xy.y + i), array);
+                        // if (array[xy.y + i][xy.x + j] === "x") {
+                        //    numMinesNearby++;
+                        // }
+                     }
+                  }
+               }
+            }
+            return;
+         }
+         function revealSquare(id, array) {
+            var square = document.getElementById(id);
+            square.classList.add('uncovered');
+            var num = getNum(id, array);
+            if (num == 0) {
+               return;
+            }
+            insertNum(id, num);
+         }
          function clearGrid(grid) {
+            //clear UI
             while (grid.firstChild) {
                 grid.removeChild(grid.firstChild);
             }
+            //clear array
+            gridArray = [];
          }
          function createArray(array, num_squares_x, num_squares_y, numMines) {
             //array grid
@@ -134,13 +226,8 @@
                array_max_x = array[0].length;
             }
             var numMinesNearby = 0;
-            //array = [0, 0, 0, 0],
-            //        [x, 0, 0, 0],
-            //        [0, 0 ,0, 0]
             for(var i = -1; i < 2; ++i) {
                for(var j = -1; j < 2; ++j) {
-                  //[-1][-1]
-                  //
                   if(x + j >= 0 && x + j < array_max_x) {
                      if(y + i >= 0 && y + i < array_max_y) {
                         if (array[y + i][x + j] === "x") {
@@ -152,6 +239,7 @@
             }
             return numMinesNearby;
          }
+
 
       </script>
    </body>
