@@ -5,6 +5,9 @@
       <title>Minesweeper</title>
    </head>
    <style>
+      #grid {
+         border: 1px solid #ccc;
+      }
       body {
          font-family: Tahoma, sans-serif;
       }
@@ -20,6 +23,12 @@
          text-align: center;
          width: 20px;
       }
+      .lose {
+         background-color: red;
+      }
+      .win {
+         background-color: green;
+      }
       .covered {
       }
       .uncovered {
@@ -28,6 +37,9 @@
       .grid-wrapper {
          display: inline-block;
          padding: 15px;
+      }
+      .d-none {
+         display: none;
       }
    </style>
    <body>
@@ -47,6 +59,10 @@
       </form>
       <div class="grid-wrapper">
          <div id="grid"></div>
+      </div>
+      <div class="messages">
+         <span id='win-message' class='d-none win-message'>You win!!!</span>
+         <span id='lose-message' class='d-none lose-message'>You lose. :(</span>
       </div>
       <script>
          var grid = document.getElementById('grid');
@@ -71,12 +87,15 @@
             var squares = document.getElementsByClassName('square');
             for (var i = 0; i < squares.length; i++) {
                squares[i].addEventListener('click', function () {
-                  revealSquare(this.id, gridArray)
+                  revealSurrounding(this.id, gridArray)
                });
-
             }
          }
-
+         function isGameWon() {
+            var numMines = getNumMines();
+            var covered = document.getElementsByClassName('covered');
+            return numMines === covered.length;
+         }
          function getX() {
             return Number(document.getElementById('x').value);
          }
@@ -89,7 +108,23 @@
          function getGridElement() {
             return document.getElementById('grid');
          }
-
+         function loseGame() {
+            addClassToCovered('lose');
+            document.getElementById('lose-message').classList.remove('d-none');
+            return;
+         }
+         function winGame() {
+            addClassToCovered('win');
+            document.getElementById('win-message').classList.remove('d-none');
+            return;
+         }
+         function addClassToCovered(className) {
+            var squares = document.getElementsByClassName('covered');
+            for (var i = 0; i < squares.length; ++i) {
+               squares[i].classList.add(className);
+            }
+            return;
+         }
          function createGrid(grid, array, num_squares_x, num_squares_y, numMines) {
 
             //UI grid
@@ -107,7 +142,7 @@
          }
          function createSquare(id) {
             var square = document.createElement('div');
-            square.className += ' square';
+            square.className += 'covered square';
             square.id = id;
             return square;
          }
@@ -122,32 +157,43 @@
          }
          function getXY(id) {
             var split = id.split('-');
-            return {'x': split[0], 'y': split[1]};
+            return {'x': parseInt(split[0]), 'y': parseInt(split[1])};
          }
          function getId(x, y) {
             return x.toString() + '-' + y.toString();
          }
-         //TODO: check if this is true
          //if the id square is 0, surroundings can be revealed
-         function areSurroundingSquaresRevealable(id, array) {
-            var xy = getXY(id);
-            return array[xy.y][xy.x] == 0;
+         function isSquareZero(id, array) {
+            var num = getNum(id, array);
+            return num == 0;
          }
          function isMine(id, array) {
             var xy = getXY(id);
             return array[xy.y][xy.x] === 'x';
          }
-         //TODO: actually make this work
+         function isRevealed(id) {
+            var square = document.getElementById(id);
+            return square.classList.contains('uncovered');
+         }
          function revealSurrounding(id, array) {
             var xy = getXY(id);
+            //stop if is already is revealed
+            if (isRevealed(id)) {
+               return;
+            }
+            revealSquare(id, array);
             //stop if is mine because game over
             if (isMine(id, array)) {
-               revealSquare(id, array);
+               loseGame();
+               return;
+            }
+            //stop if game is won
+            if (isGameWon()) {
+               winGame();
                return;
             }
             //stop if no surrounding squares revealable
-            if (!areSurroundingSquaresRevealable(id, array)) {
-               revealSquare(id, array);
+            if (!isSquareZero(id, array)) {
                return;
             }
             //array[y][x]
@@ -161,9 +207,6 @@
                   if(xy.x + j >= 0 && xy.x + j < array_max_x) {
                      if(xy.y + i >= 0 && xy.y + i < array_max_y) {
                         revealSurrounding(getId(xy.x + j, xy.y + i), array);
-                        // if (array[xy.y + i][xy.x + j] === "x") {
-                        //    numMinesNearby++;
-                        // }
                      }
                   }
                }
@@ -173,6 +216,7 @@
          function revealSquare(id, array) {
             var square = document.getElementById(id);
             square.classList.add('uncovered');
+            square.classList.remove('covered');
             var num = getNum(id, array);
             if (num == 0) {
                return;
@@ -210,7 +254,6 @@
             for (var y = 0; y < array.length; ++y) {
                for(var x = 0; x < array[0].length; ++x) {
                   array[y][x] = getNumMinesNearby(array, x, y);
-                  console.log(x, y, array[y][x]);
                }
             }
             return array;
